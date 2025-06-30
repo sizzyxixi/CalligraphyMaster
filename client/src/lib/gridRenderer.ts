@@ -170,18 +170,22 @@ function renderCharacterGrid(
     const fontSize = calculateFontSize(size / scale, settings.fontSize) * scale;
     const fontFamily = getFontFamily(fontType);
     
+    // Ensure Chinese font rendering
+    const chineseFontFamily = `${fontFamily}, "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", "SimHei", "Arial Unicode MS", sans-serif`;
+    
     // Draw pinyin if enabled and not four-line grid
     if (showPinyin && charData.pinyin && gridType !== 'fourLine') {
       ctx.fillStyle = '#6B7280';
-      ctx.font = `${fontSize * 0.3}px ${fontFamily}`;
+      ctx.font = `${fontSize * 0.3}px ${chineseFontFamily}`;
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
       ctx.fillText(charData.pinyin, x + size/2, y + (12 * scale));
     }
     
     // Draw main character
     const alpha = fontOpacity / 100;
     ctx.fillStyle = `rgba(107, 114, 128, ${alpha})`;
-    ctx.font = `${fontSize}px ${fontFamily}`;
+    ctx.font = `${fontSize}px ${chineseFontFamily}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     

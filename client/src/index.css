@@ -74,7 +74,7 @@
 
 @layer components {
   .font-chinese {
-    font-family: 'SimSun', 'KaiTi', 'Noto Sans SC', serif;
+    font-family: 'KaiTi', 'SimSun', 'Noto Sans CJK SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', 'SimHei', 'Noto Sans SC', serif;
   }
   
   .character-grid-cell {
