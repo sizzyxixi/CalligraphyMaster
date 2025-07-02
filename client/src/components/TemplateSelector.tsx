@@ -8,8 +8,6 @@ interface TemplateSelectorProps {
 
 export default function TemplateSelector({ value, onChange }: TemplateSelectorProps) {
   const templates = [
-    { id: 'empty' as const, label: '空格子纸', icon: 'fas fa-th-large' },
-    { id: 'stroke' as const, label: '笔顺字帖', icon: 'fas fa-pen-fancy' },
     { id: 'article' as const, label: '文章字帖', icon: 'fas fa-file-alt' },
     { id: 'single' as const, label: '单字强化', icon: 'fas fa-font' },
   ];

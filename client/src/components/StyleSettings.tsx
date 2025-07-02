@@ -2,9 +2,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { FontType } from "@/lib/utils";
+import type { FontType, GridType } from "@/lib/utils";
 
 interface StyleSettingsProps {
+  gridType: GridType;
   fontType: FontType;
   fontOpacity: number;
   showPinyin: boolean;
@@ -14,6 +15,7 @@ interface StyleSettingsProps {
 }
 
 export default function StyleSettings({
+  gridType,
   fontType,
   fontOpacity,
   showPinyin,
@@ -21,6 +23,8 @@ export default function StyleSettings({
   onFontOpacityChange,
   onShowPinyinChange
 }: StyleSettingsProps) {
+  const isFourLineGrid = gridType === 'fourLine';
+  
   return (
     <div className="p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">字体样式</h3>
@@ -32,10 +36,22 @@ export default function StyleSettings({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="kaiti">楷体</SelectItem>
-              <SelectItem value="simsun">宋体</SelectItem>
-              <SelectItem value="simhei">黑体</SelectItem>
-              <SelectItem value="fangsong">仿宋</SelectItem>
+              {isFourLineGrid ? (
+                // English fonts for four-line grids
+                <>
+                  <SelectItem value="arial">Arial</SelectItem>
+                  <SelectItem value="times">Times New Roman</SelectItem>
+                  <SelectItem value="courier">Courier New</SelectItem>
+                </>
+              ) : (
+                // Chinese fonts for other grids
+                <>
+                  <SelectItem value="kaiti">楷体</SelectItem>
+                  <SelectItem value="simsun">宋体</SelectItem>
+                  <SelectItem value="simhei">黑体</SelectItem>
+                  <SelectItem value="fangsong">仿宋</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -55,13 +71,15 @@ export default function StyleSettings({
             <span>深色</span>
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium text-gray-700">显示拼音</Label>
-          <Switch
-            checked={showPinyin}
-            onCheckedChange={onShowPinyinChange}
-          />
-        </div>
+        {!isFourLineGrid && (
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium text-gray-700">显示拼音</Label>
+            <Switch
+              checked={showPinyin}
+              onCheckedChange={onShowPinyinChange}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
