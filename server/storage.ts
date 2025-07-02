@@ -1,4 +1,7 @@
 import { users, type User, type InsertUser } from "@shared/schema";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { eq } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -36,4 +39,33 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class PgStorage implements IStorage {
+  private db;
+
+  constructor() {
+    const DATABASE_URL = process.env.DATABASE_URL || 'postgres://postgres:UzUlwvsB@127.0.0.1:5432/character_grid_db';
+    const sql = postgres(DATABASE_URL);
+    this.db = drizzle(sql);
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const result = await this.db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+}
+
+// Choose which storage implementation to use
+// For development with PostgreSQL
+export const storage = new PgStorage();
+// For memory-only storage (uncomment to use)
+// export const storage = new MemStorage();

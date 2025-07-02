@@ -4,9 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface LayoutSettingsProps {
   gridsPerRow: number;
-  fontSize: string;
+  fontSize: 'auto' | 'small' | 'medium' | 'large';
   onGridsPerRowChange: (value: number) => void;
-  onFontSizeChange: (value: string) => void;
+  onFontSizeChange: (value: 'auto' | 'small' | 'medium' | 'large') => void;
 }
 
 export default function LayoutSettings({
@@ -15,6 +15,10 @@ export default function LayoutSettings({
   onGridsPerRowChange,
   onFontSizeChange
 }: LayoutSettingsProps) {
+  const handleFontSizeChange = (value: string) => {
+    onFontSizeChange(value as 'auto' | 'small' | 'medium' | 'large');
+  };
+
   return (
     <div className="p-6 border-b border-gray-200">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">布局设置</h3>
@@ -37,7 +41,7 @@ export default function LayoutSettings({
         </div>
         <div>
           <Label className="block text-sm font-medium text-gray-700 mb-2">字体大小</Label>
-          <Select value={fontSize} onValueChange={onFontSizeChange}>
+          <Select value={fontSize} onValueChange={handleFontSizeChange}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>

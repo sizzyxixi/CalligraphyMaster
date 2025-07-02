@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Home() {
   const [settings, setSettings] = useState<CharacterGridSettings>(defaultSettings);
   const [isExporting, setIsExporting] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(75); // Default zoom level
   const { toast } = useToast();
 
   const updateSettings = (updates: Partial<CharacterGridSettings>) => {
@@ -20,7 +21,7 @@ export default function Home() {
   };
 
   const handleExportPDF = async () => {
-    if (!settings.content.trim()) {
+    if (!settings.content.trim() && settings.templateType === 'single') {
       toast({
         title: "内容为空",
         description: "请先输入要练习的文字内容",
@@ -51,7 +52,7 @@ export default function Home() {
   };
 
   const handlePreview = () => {
-    if (!settings.content.trim()) {
+    if (!settings.content.trim() && settings.templateType === 'single') {
       toast({
         title: "内容为空",
         description: "请先输入要练习的文字内容",
@@ -76,11 +77,44 @@ export default function Home() {
     });
   };
 
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 25, 150)); // Max 150%
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 25, 50)); // Min 50%
+  };
+
   const getCharacterCount = () => {
-    if (settings.contentType === 'chinese') {
-      return settings.content.replace(/\s/g, '').length;
+    if (settings.templateType === 'article') {
+      // For article template, estimate grid count based on page layout
+      const A4_WIDTH = 595; // A4 width in points
+      const A4_HEIGHT = 842; // A4 height in points
+      const HEADER_HEIGHT = 80;
+      const PADDING = 80; // 40 * 2
+      
+      const availableWidth = A4_WIDTH - PADDING;
+      const availableHeight = A4_HEIGHT - HEADER_HEIGHT - PADDING;
+      
+      // Estimate grid size based on gridsPerRow
+      const gridSize = availableWidth / settings.gridsPerRow;
+      const gridSpacing = 0; // Set to 0 as requested
+      const totalGridHeight = gridSize + gridSpacing;
+      
+      // Calculate how many rows can fit
+      const maxRows = Math.floor(availableHeight / totalGridHeight);
+      const totalGrids = maxRows * settings.gridsPerRow;
+      
+      if (!settings.content.trim()) {
+        return totalGrids; // Return total available grids for empty content
+      }
+      
+      // Return actual content length for filled content
+      return Math.min(settings.content.replace(/\s/g, '').length, totalGrids);
     }
-    return settings.content.split(/\s+/).filter(word => word.length > 0).length;
+    
+    // For single character mode
+    return settings.content.replace(/\s/g, '').length;
   };
 
   return (
@@ -104,7 +138,7 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               <Button 
                 onClick={handleExportPDF}
-                disabled={isExporting || !settings.content.trim()}
+                disabled={isExporting || (!settings.content.trim() && settings.templateType === 'single')}
                 className="bg-primary-500 hover:bg-primary-600 text-white"
               >
                 {isExporting ? (
@@ -123,6 +157,11 @@ export default function Home() {
           {/* Left Sidebar - Controls */}
           <div className="w-80 flex-shrink-0">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <ContentInput
+                content={settings.content}
+                onContentChange={(content) => updateSettings({ content })}
+              />
+
               <TemplateSelector 
                 value={settings.templateType}
                 onChange={(templateType) => updateSettings({ templateType })}
@@ -133,13 +172,6 @@ export default function Home() {
                 onChange={(gridType) => updateSettings({ gridType })}
               />
 
-              <ContentInput
-                contentType={settings.contentType}
-                content={settings.content}
-                onContentTypeChange={(contentType) => updateSettings({ contentType })}
-                onContentChange={(content) => updateSettings({ content })}
-              />
-
               <LayoutSettings
                 gridsPerRow={settings.gridsPerRow}
                 fontSize={settings.fontSize}
@@ -148,6 +180,7 @@ export default function Home() {
               />
 
               <StyleSettings
+                gridType={settings.gridType}
                 fontType={settings.fontType}
                 fontOpacity={settings.fontOpacity}
                 showPinyin={settings.showPinyin}
@@ -172,11 +205,19 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button className="px-3 py-1 text-xs font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50">
+                    <button 
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 50}
+                      className="px-3 py-1 text-xs font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       <i className="fas fa-search-minus mr-1"></i>缩小
                     </button>
-                    <span className="text-sm text-gray-500">75%</span>
-                    <button className="px-3 py-1 text-xs font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50">
+                    <span className="text-sm text-gray-500 w-12 text-center">{zoomLevel}%</span>
+                    <button 
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 150}
+                      className="px-3 py-1 text-xs font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       <i className="fas fa-search-plus mr-1"></i>放大
                     </button>
                   </div>
@@ -185,7 +226,7 @@ export default function Home() {
 
               {/* Preview Canvas */}
               <div className="p-6 bg-gray-100 min-h-[800px] flex justify-center">
-                <PreviewCanvas settings={settings} />
+                <PreviewCanvas settings={settings} zoomLevel={zoomLevel} />
               </div>
             </div>
 
@@ -212,11 +253,13 @@ export default function Home() {
                 <div className="flex items-center space-x-3">
                   <div className="text-sm text-gray-600">
                     <span className="font-medium">页数:</span> 1 页
-                    <span className="ml-4 font-medium">字数:</span> {getCharacterCount()} 字
+                    <span className="ml-4 font-medium">
+                      {settings.templateType === 'article' ? '格子数:' : '字数:'}
+                    </span> {getCharacterCount()} {settings.templateType === 'article' ? '个' : '字'}
                   </div>
                   <Button 
                     onClick={handleExportPDF}
-                    disabled={isExporting || !settings.content.trim()}
+                    disabled={isExporting || (!settings.content.trim() && settings.templateType === 'single')}
                     className="bg-primary-500 hover:bg-primary-600 text-white font-medium"
                   >
                     {isExporting ? (
