@@ -1,28 +1,16 @@
 import { useMemo } from "react";
-import { getChineseCharacters, detectContentType, getPinyin } from "@/lib/utils";
+import { getChineseCharacters, detectContentType, getPinyin, calculateMaxGridsForPage } from "@/lib/utils";
 import type { CharacterGridSettings } from "@/lib/utils";
 
 export function useCharacterGrid(settings: CharacterGridSettings) {
   const characterData = useMemo(() => {
     const contentType = detectContentType(settings.content);
     
-    // Use optimized layout values to match PDF export
-    const A4_WIDTH = 595; // A4 width in points
-    const A4_HEIGHT = 842; // A4 height in points
-    const HEADER_HEIGHT = 60; // Reduced header height to match PDF export
-    const PADDING = 40; // Reduced padding to match PDF export (20px on each side)
+    // Use unified calculation to match PDF export and preview
     
-    const availableWidth = A4_WIDTH - PADDING;
-    const availableHeight = A4_HEIGHT - HEADER_HEIGHT - PADDING;
     
-    // Estimate grid size based on gridsPerRow
-    const gridSize = availableWidth / settings.gridsPerRow;
-    const gridSpacing = -1; // Overlapping borders
-    const totalGridHeight = gridSize + Math.abs(gridSpacing);
     
-    // Calculate how many rows can fit on one page
-    const maxRows = Math.floor(availableHeight / totalGridHeight);
-    const maxGridsPerPage = maxRows * settings.gridsPerRow;
+    const maxGridsPerPage = calculateMaxGridsForPage(settings);
     
     if (settings.templateType === 'article') {
       // Article template: For preview, show ALL content (not limited to one page)

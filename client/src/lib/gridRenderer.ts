@@ -139,22 +139,21 @@ function renderHeader(ctx: CanvasRenderingContext2D, scale: number, canvasWidth:
   ctx.textAlign = 'center';
   ctx.fillText('汉字练习字帖', canvasWidth / 2, 25 * scale); // Reduced from 30 to 25px
   
-  // Info line with optimized spacing
+  // 姓名和日期信息行 - 两端对齐分布，紧贴首行格子上方
   ctx.fillStyle = '#6B7280';
-  ctx.font = `${11 * scale}px "Inter", "Noto Sans SC", sans-serif`; // Reduced from 12 to 11px
+  ctx.font = `${11 * scale}px "Inter", "Noto Sans SC", sans-serif`;
+  
+  // 信息行位置调整到更接近格子线条 (headerHeight - 10px)
+  const infoY = headerHeight - (10 * scale);
+  const padding = 20 * scale; // 与格子padding保持一致
+  
+  // 姓名 - 左对齐
   ctx.textAlign = 'left';
+  ctx.fillText('姓名：___________', padding, infoY);
   
-  const infoY = 50 * scale; // Reduced from 70 to 50px
-  const infoSpacing = 70 * scale; // Reduced from 80 to 70px
-  let infoX = 30 * scale; // Reduced from 50 to 30px
-  
-  ctx.fillText('姓名：___________', infoX, infoY);
-  infoX += infoSpacing * 1.3; // Reduced spacing multiplier
-  
-  ctx.fillText('日期：___________', infoX, infoY);
-  infoX += infoSpacing * 1.3; // Reduced spacing multiplier
-  
-  ctx.fillText('班级：___________', infoX, infoY);
+  // 日期 - 右对齐  
+  ctx.textAlign = 'right';
+  ctx.fillText('日期：___________', canvasWidth - padding, infoY);
 }
 
 function renderCharacterGrid(

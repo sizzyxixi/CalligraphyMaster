@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from "react";
 import { useCharacterGrid } from "@/hooks/useCharacterGrid";
 import { renderGrid } from "@/lib/gridRenderer";
-import { detectContentType } from "@/lib/utils";
+import { detectContentType, calculateMaxGridsForPage } from "@/lib/utils";
 import type { CharacterGridSettings } from "@/lib/utils";
 
 interface PreviewCanvasProps {
@@ -12,28 +12,10 @@ interface PreviewCanvasProps {
 export default function PreviewCanvas({ settings, zoomLevel = 75 }: PreviewCanvasProps) {
   const { characterData, gridLayout } = useCharacterGrid(settings);
   
-  // Calculate how many grids fit per page (using optimized values)
+  // Use unified calculation to match PDF export and other components
   const maxGridsPerPage = useMemo(() => {
-    const A4_WIDTH = 595;
-    const A4_HEIGHT = 842;
-    const HEADER_HEIGHT = 60; // Optimized header height
-    const PADDING = 40; // Optimized padding
-    
-    const availableWidth = A4_WIDTH - PADDING;
-    const availableHeight = A4_HEIGHT - HEADER_HEIGHT - PADDING;
-    
-    const gridSize = availableWidth / settings.gridsPerRow;
-    const gridSpacing = -1;
-    
-    // Check if we need pinyin rows (same logic as PDF export)
-    const contentType = detectContentType(settings.content);
-    const needsPinyinRows = settings.showPinyin && contentType === 'chinese' && settings.gridType !== 'fourLine';
-    const pinyinRowHeight = needsPinyinRows ? gridSize * 0.3 : 0;
-    const totalGridHeight = gridSize + pinyinRowHeight + Math.abs(gridSpacing);
-    
-    const maxRows = Math.floor(availableHeight / totalGridHeight);
-    return Math.max(1, maxRows * settings.gridsPerRow);
-  }, [settings.gridsPerRow, settings.showPinyin, settings.content, settings.gridType]);
+    return calculateMaxGridsForPage(settings);
+  }, [settings]);
   
   // Calculate pages needed
   const totalPages = Math.max(1, Math.ceil(characterData.length / maxGridsPerPage));

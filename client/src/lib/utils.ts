@@ -94,11 +94,40 @@ export function getFontFamily(fontType: FontType): string {
 }
 
 export function calculateGridSize(gridsPerRow: number, containerWidth: number): number {
-  const padding = 64; // 32px padding on each side
-  const gridSpacing = 8; // 2px gap between grids
+  const padding = 40; // 20px padding on each side (consistent with A4 layout)
+  const gridSpacing = -1; // Overlapping borders (consistent with rendering)
   const availableWidth = containerWidth - padding;
-  const totalSpacing = (gridsPerRow - 1) * gridSpacing;
+  const totalSpacing = (gridsPerRow - 1) * Math.abs(gridSpacing);
   return Math.floor((availableWidth - totalSpacing) / gridsPerRow);
+}
+// 计算页面可容纳的最大网格数
+export function calculateMaxGridsForPage(settings: CharacterGridSettings): number {
+  const A4_WIDTH = 595;
+  const A4_HEIGHT = 842;
+  const HEADER_HEIGHT = 60;
+  const PADDING = 40; // 20px on each side
+  
+  const availableWidth = A4_WIDTH - PADDING;
+  const availableHeight = A4_HEIGHT - HEADER_HEIGHT - PADDING;
+  
+  // 计算网格大小
+  const gridSize = availableWidth / settings.gridsPerRow;
+  const gridSpacing = -1; // 重叠边框
+  
+  // 检查是否需要拼音行
+  const contentType = detectContentType(settings.content);
+  const needsPinyinRows = settings.showPinyin && contentType === 'chinese' && settings.gridType !== 'fourLine';
+  const pinyinRowHeight = needsPinyinRows ? gridSize * 0.3 : 0;
+  const totalRowHeight = gridSize + pinyinRowHeight + Math.abs(gridSpacing);
+  
+  // 计算可以容纳的最大行数
+  const maxRows = Math.floor(availableHeight / totalRowHeight);
+  
+  // 确保至少有一行
+  const actualRows = Math.max(1, maxRows);
+  
+  // 返回总的网格数
+  return actualRows * settings.gridsPerRow;
 }
 
 export function calculateFontSize(gridSize: number, fontSize: string): number {

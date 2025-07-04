@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { renderGrid } from './gridRenderer';
-import { getFontFamily, calculateGridSize, calculateFontSize, detectContentType, getPinyin } from "@/lib/utils";
+import { getFontFamily, calculateGridSize, calculateFontSize, detectContentType, getPinyin, getChineseCharacters, calculateMaxGridsForPage } from "@/lib/utils";
 import type { CharacterGridSettings } from "@/lib/utils";
 
 interface CharacterData {
@@ -31,10 +31,23 @@ export async function exportToPDF(settings: CharacterGridSettings, filename: str
     totalGrids: Math.ceil(characterData.length / settings.gridsPerRow) * settings.gridsPerRow
   };
 
+  // Calculate if this will be multi-page export
+  const maxGridsPerPage = calculateMaxGridsForPage(settings);
+  const isMultiPage = characterData.length > maxGridsPerPage;
+  
   // High resolution canvas (300 DPI equivalent)
   const scale = 3; // 3x scale for high quality
   const pageWidth = 595 * scale; // A4 width in pixels at 72 DPI * scale
-  const pageHeight = 842 * scale; // A4 height in pixels at 72 DPI * scale
+  
+  // Dynamic height calculation - reduce whitespace for single pages
+  let pageHeight: number;
+  if (isMultiPage) {
+    // Multi-page: use full A4 height
+    pageHeight = 842 * scale;
+  } else {
+    // Single page: calculate dynamic height to minimize whitespace
+    pageHeight = calculateDynamicPageHeight(settings, characterData, scale);
+  }
   
   canvas.width = pageWidth;
   canvas.height = pageHeight;
@@ -43,11 +56,9 @@ export async function exportToPDF(settings: CharacterGridSettings, filename: str
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, pageWidth, pageHeight);
 
-  // Calculate how many grids can fit on the first page
-  const maxGridsPerPage = calculateMaxGridsPerPage(settings.gridsPerRow, settings);
   
   // If we have content and it doesn't fit on one page, we need multi-page support
-  if (characterData.length > maxGridsPerPage) {
+  if (isMultiPage) {
     // Multi-page export
     const totalPages = Math.ceil(characterData.length / maxGridsPerPage);
     
@@ -129,7 +140,12 @@ export async function exportToPDF(settings: CharacterGridSettings, filename: str
     // Convert canvas to image and add to PDF
     const pdf = new jsPDF('portrait', 'mm', 'a4');
     const imgData = canvas.toDataURL('image/png', 1.0);
-    pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+    
+    // Calculate dynamic PDF dimensions to reduce whitespace
+    const dynamicHeightMM = (pageHeight / scale) / 595 * 210; // Convert to mm maintaining aspect ratio
+    const finalHeight = Math.min(dynamicHeightMM, 297); // Don't exceed A4 height
+    
+    pdf.addImage(imgData, 'PNG', 0, 0, 210, finalHeight);
     
     // Save the PDF
     pdf.save(filename);
@@ -164,7 +180,7 @@ function getCharacterData(settings: CharacterGridSettings): CharacterData[] {
   const contentType = detectContentType(settings.content);
   
   // Use the same calculation logic as calculateMaxGridsPerPage for consistency
-  const maxGridsPerPage = calculateMaxGridsPerPage(settings.gridsPerRow, settings);
+  const maxGridsPerPage = calculateMaxGridsForPage(settings);
   
   if (settings.templateType === 'article') {
     // Article template: For multi-page support, return all content characters
@@ -173,12 +189,7 @@ function getCharacterData(settings: CharacterGridSettings): CharacterData[] {
     if (settings.content.trim()) {
       switch (contentType) {
         case 'chinese': {
-          const characters = settings.content.split('').filter(char => {
-            const code = char.charCodeAt(0);
-            return (code >= 0x4E00 && code <= 0x9FFF) ||
-                   (code >= 0x3400 && code <= 0x4DBF) ||
-                   (code >= 0x20000 && code <= 0x2A6DF);
-          });
+          const characters = getChineseCharacters(settings.content);
           contentCharacters = characters.map(char => ({
             character: char,
             pinyin: settings.showPinyin ? getPinyin(char) : undefined
@@ -204,8 +215,18 @@ function getCharacterData(settings: CharacterGridSettings): CharacterData[] {
       }
     }
     
-    // Always return all content characters for multi-page processing
-    return contentCharacters;
+    // Return all content characters for multi-page processing (same as preview)
+    // For article template: Add all content + fill current page with empty grids (same as preview)
+    const result = [];
+    
+    // Add all content characters (not limited to one page)
+    for (let i = 0; i < contentCharacters.length; i++) {
+      result.push(contentCharacters[i]);
+    }
+    
+    // 直接返回内容字符，不预填充空格子，让多页判断正确工作
+    
+    return result;
   } else if (settings.templateType === 'single') {
     // Single character mode: Each character fills entire rows
     if (!settings.content.trim()) {
@@ -217,12 +238,7 @@ function getCharacterData(settings: CharacterGridSettings): CharacterData[] {
     }
     
     const characters = contentType === 'chinese' 
-      ? settings.content.split('').filter(char => {
-          const code = char.charCodeAt(0);
-          return (code >= 0x4E00 && code <= 0x9FFF) ||
-                 (code >= 0x3400 && code <= 0x4DBF) ||
-                 (code >= 0x20000 && code <= 0x2A6DF);
-        })
+      ? getChineseCharacters(settings.content)
       : settings.content.split('').filter(c => c.trim());
     
     const result: CharacterData[] = [];
@@ -236,19 +252,11 @@ function getCharacterData(settings: CharacterGridSettings): CharacterData[] {
         });
       }
       
-      // Stop if we've filled the page
-      if (result.length >= maxGridsPerPage) break;
+      // 删除页面限制，让所有字符都能被处理
     }
     
-    // Fill remaining space with empty grids
-    while (result.length < maxGridsPerPage) {
-      result.push({
-        character: '',
-        pinyin: undefined
-      });
-    }
-    
-    return result.slice(0, maxGridsPerPage);
+    // 不再预填充空格子，让多页判断逻辑正确工作
+    return result;
   }
   
   return [];
@@ -278,4 +286,33 @@ function fillPageWithContent(
   }
   
   return result;
+}
+// Calculate dynamic page height to minimize whitespace for single pages
+function calculateDynamicPageHeight(
+  settings: CharacterGridSettings, 
+  characterData: CharacterData[], 
+  scale: number
+): number {
+  const A4_HEIGHT = 842 * scale;
+  const HEADER_HEIGHT = 60 * scale;
+  const PADDING = 40 * scale;
+  
+  // Calculate grid dimensions
+  const availableWidth = (595 - 40) * scale; // A4 width - padding, scaled
+  const gridSize = availableWidth / settings.gridsPerRow;
+  const gridSpacing = Math.abs(-1 * scale);
+  
+  // Check if we need pinyin rows
+  const contentType = detectContentType(settings.content);
+  const needsPinyinRows = settings.showPinyin && contentType === 'chinese' && settings.gridType !== 'fourLine';
+  const pinyinRowHeight = needsPinyinRows ? gridSize * 0.3 : 0;
+  const totalRowHeight = gridSize + pinyinRowHeight + gridSpacing;
+  
+  // Calculate actual rows needed
+  const actualRows = Math.ceil(characterData.length / settings.gridsPerRow);
+  const contentHeight = actualRows * totalRowHeight;
+  const totalNeededHeight = HEADER_HEIGHT + PADDING + contentHeight + (PADDING * 0.5); // Small bottom padding
+  
+  // Return the smaller of needed height or A4 height
+  return Math.min(totalNeededHeight, A4_HEIGHT);
 }
