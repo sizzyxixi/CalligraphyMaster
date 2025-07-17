@@ -6,6 +6,7 @@ import ContentInput from "@/components/ContentInput";
 import LayoutSettings from "@/components/LayoutSettings";
 import StyleSettings from "@/components/StyleSettings";
 import PreviewCanvas from "@/components/PreviewCanvas";
+import HelpDialog from "@/components/HelpDialog";
 import { defaultSettings, type CharacterGridSettings, formatDateForFilename } from "@/lib/utils";
 import { exportToPDF } from "@/lib/pdfExporter";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 export default function Home() {
   const [settings, setSettings] = useState<CharacterGridSettings>(defaultSettings);
   const [isExporting, setIsExporting] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(75); // Default zoom level
+  const [zoomLevel, setZoomLevel] = useState(100); // Default zoom level
+  const [showHelpDialog, setShowHelpDialog] = useState(false);
   const { toast } = useToast();
 
   const updateSettings = (updates: Partial<CharacterGridSettings>) => {
@@ -125,14 +127,24 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-primary-600">
-                  <i className="fas fa-edit mr-2"></i>字帖生成器
-                </h1>
+                <div className="flex items-center space-x-3">
+                  <h1 className="text-2xl font-bold text-primary-600">
+                    <i className="fas fa-edit mr-2"></i>字帖生成器
+                  </h1>
+                  <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
+                    made by ClackyAI
+                  </div>
+                </div>
               </div>
               <nav className="hidden md:ml-10 md:flex md:space-x-8">
                 <a href="#" className="text-gray-900 hover:text-primary-600 px-3 py-2 text-sm font-medium">首页</a>
                 <a href="#" className="text-gray-500 hover:text-primary-600 px-3 py-2 text-sm font-medium">模板库</a>
-                <a href="#" className="text-gray-500 hover:text-primary-600 px-3 py-2 text-sm font-medium">帮助</a>
+                <button 
+                  onClick={() => setShowHelpDialog(true)}
+                  className="text-gray-500 hover:text-primary-600 px-3 py-2 text-sm font-medium"
+                >
+                  帮助
+                </button>
               </nav>
             </div>
             <div className="flex items-center space-x-4">
@@ -274,6 +286,12 @@ export default function Home() {
           </div>
         </div>
       </div>
+      
+      {/* Help Dialog */}
+      <HelpDialog 
+        open={showHelpDialog}
+        onOpenChange={setShowHelpDialog}
+      />
     </div>
   );
 }

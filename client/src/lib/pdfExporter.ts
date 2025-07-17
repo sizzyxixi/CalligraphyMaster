@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { renderGrid } from './gridRenderer';
-import { getFontFamily, calculateGridSize, calculateFontSize, detectContentType, getPinyin, getChineseCharacters, calculateMaxGridsForPage } from "@/lib/utils";
+import { getFontFamily, calculateGridSize, calculateFontSize, detectContentType, getPinyin, getChineseCharacters, getAllCharacters, calculateMaxGridsForPage } from "@/lib/utils";
 import type { CharacterGridSettings } from "@/lib/utils";
 
 interface CharacterData {
@@ -168,7 +168,7 @@ function calculateMaxGridsPerPage(gridsPerRow: number, settings: CharacterGridSe
   
   // Check if we need pinyin rows
   const contentType = detectContentType(settings.content);
-  const needsPinyinRows = settings.showPinyin && contentType === 'chinese' && settings.gridType !== 'fourLine';
+  const needsPinyinRows = settings.showPinyin && (contentType === 'chinese' || contentType === 'mixed') && settings.gridType !== 'fourLine';
   const pinyinRowHeight = needsPinyinRows ? gridSize * 0.3 : 0; // Reduced from 0.4 to 0.3
   const totalRowHeight = gridSize + pinyinRowHeight + Math.abs(gridSpacing);
   
@@ -194,6 +194,19 @@ function getCharacterData(settings: CharacterGridSettings): CharacterData[] {
             character: char,
             pinyin: settings.showPinyin ? getPinyin(char) : undefined
           }));
+          break;
+        }
+        case 'mixed': {
+          // 对于混合内容，显示所有字符（中文、英文、数字、标点符号）
+          const characters = getAllCharacters(settings.content);
+          contentCharacters = characters.map(char => {
+            // 只为中文字符显示拼音
+            const isChineseChar = getChineseCharacters(char).length > 0;
+            return {
+              character: char,
+              pinyin: settings.showPinyin && isChineseChar ? getPinyin(char) : undefined
+            };
+          });
           break;
         }
         case 'pinyin': {
@@ -239,6 +252,8 @@ function getCharacterData(settings: CharacterGridSettings): CharacterData[] {
     
     const characters = contentType === 'chinese' 
       ? getChineseCharacters(settings.content)
+      : contentType === 'mixed'
+      ? getAllCharacters(settings.content)
       : settings.content.split('').filter(c => c.trim());
     
     const result: CharacterData[] = [];
@@ -248,7 +263,7 @@ function getCharacterData(settings: CharacterGridSettings): CharacterData[] {
       for (let i = 0; i < settings.gridsPerRow; i++) {
         result.push({
           character: char,
-          pinyin: settings.showPinyin && contentType === 'chinese' ? getPinyin(char) : undefined
+          pinyin: settings.showPinyin && (contentType === 'chinese' || (contentType === 'mixed' && getChineseCharacters(char).length > 0)) ? getPinyin(char) : undefined
         });
       }
       
@@ -304,7 +319,7 @@ function calculateDynamicPageHeight(
   
   // Check if we need pinyin rows
   const contentType = detectContentType(settings.content);
-  const needsPinyinRows = settings.showPinyin && contentType === 'chinese' && settings.gridType !== 'fourLine';
+  const needsPinyinRows = settings.showPinyin && (contentType === 'chinese' || contentType === 'mixed') && settings.gridType !== 'fourLine';
   const pinyinRowHeight = needsPinyinRows ? gridSize * 0.3 : 0;
   const totalRowHeight = gridSize + pinyinRowHeight + gridSpacing;
   

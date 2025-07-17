@@ -135,7 +135,7 @@ function PageCanvas({
     // Check if we need pinyin rows
     const contentType = detectContentType(settings.content);
     
-    const needsPinyinRows = settings.showPinyin && contentType === 'chinese' && settings.gridType !== 'fourLine';
+    const needsPinyinRows = settings.showPinyin && (contentType === 'chinese' || contentType === 'mixed') && settings.gridType !== 'fourLine';
     const pinyinRowHeight = needsPinyinRows ? gridSize * 0.3 : 0;
     const totalRowHeight = gridSize + pinyinRowHeight + gridSpacing;
     
