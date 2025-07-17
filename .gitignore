@@ -1,3 +1,4 @@
+# Existing entries
 node_modules
 dist
 .DS_Store
@@ -5,3 +6,73 @@ server/public
 vite.config.ts.*
 *.tar.gz
 .env
+
+# Clacky-related configuration
+.clacky/
+*.clacky
+
+# TypeScript
+*.tsbuildinfo
+*.d.ts
+
+# React/Vite build output
+build/
+dist/
+out/
+
+# Development files
+*.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# ESLint cache
+.eslintcache
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
