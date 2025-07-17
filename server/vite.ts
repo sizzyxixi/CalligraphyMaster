@@ -23,8 +23,8 @@ export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
-    host: true,
-    allowedHosts: ['.clackypaas.com']
+    host: "0.0.0.0",
+    allowedHosts: true
   };
 
   const vite = await createViteServer({

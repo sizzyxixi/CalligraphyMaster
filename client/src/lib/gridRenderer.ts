@@ -44,7 +44,7 @@ export function renderGrid(
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
   
   // Render header
-  renderHeader(ctx, scale, canvasWidth, headerHeight);
+  renderHeader(ctx, scale, canvasWidth, headerHeight, settings);
   
   // Calculate starting position to center the grid
   const totalRowWidth = (gridsPerRow * gridSize) + ((gridsPerRow - 1) * Math.abs(gridSpacing));
@@ -132,28 +132,32 @@ function renderPinyinGrid(
   }
 }
 
-function renderHeader(ctx: CanvasRenderingContext2D, scale: number, canvasWidth: number, headerHeight: number) {
-  // Title
+function renderHeader(ctx: CanvasRenderingContext2D, scale: number, canvasWidth: number, headerHeight: number, settings?: CharacterGridSettings) {
+  // Title - bilingual
   ctx.fillStyle = '#1F2937';
-  ctx.font = `bold ${20 * scale}px "Inter", "Noto Sans SC", sans-serif`; // Reduced from 24 to 20px
+  ctx.font = `bold ${20 * scale}px "Inter", "Noto Sans SC", sans-serif`;
   ctx.textAlign = 'center';
-  ctx.fillText('汉字练习字帖', canvasWidth / 2, 25 * scale); // Reduced from 30 to 25px
   
-  // 姓名和日期信息行 - 两端对齐分布，紧贴首行格子上方
+  const isEnglishTemplate = settings?.templateType?.startsWith('english');
+  const title = isEnglishTemplate ? 'English Calligraphy Practice / 英文书法练习' : '汉字练习字帖 / Chinese Calligraphy Practice';
+  ctx.fillText(title, canvasWidth / 2, 25 * scale);
+  
+  // Name and date info - bilingual
   ctx.fillStyle = '#6B7280';
   ctx.font = `${11 * scale}px "Inter", "Noto Sans SC", sans-serif`;
   
-  // 信息行位置调整到更接近格子线条 (headerHeight - 10px)
   const infoY = headerHeight - (10 * scale);
-  const padding = 20 * scale; // 与格子padding保持一致
+  const padding = 20 * scale;
   
-  // 姓名 - 左对齐
+  // Name - left aligned
   ctx.textAlign = 'left';
-  ctx.fillText('姓名：___________', padding, infoY);
+  const nameLabel = isEnglishTemplate ? 'Name / 姓名：___________' : '姓名 / Name：___________';
+  ctx.fillText(nameLabel, padding, infoY);
   
-  // 日期 - 右对齐  
+  // Date - right aligned  
   ctx.textAlign = 'right';
-  ctx.fillText('日期：___________', canvasWidth - padding, infoY);
+  const dateLabel = isEnglishTemplate ? 'Date / 日期：___________' : '日期 / Date：___________';
+  ctx.fillText(dateLabel, canvasWidth - padding, infoY);
 }
 
 function renderCharacterGrid(
@@ -230,6 +234,37 @@ function renderCharacterGrid(
       // Lines are already drawn above
       break;
       
+    case 'englishLine':
+      // Three horizontal lines for English writing
+      const englishLineHeight = size / 3;
+      ctx.beginPath();
+      ctx.moveTo(x, y + englishLineHeight);
+      ctx.lineTo(x + size, y + englishLineHeight);
+      ctx.moveTo(x, y + englishLineHeight * 2);
+      ctx.lineTo(x + size, y + englishLineHeight * 2);
+      ctx.stroke();
+      break;
+      
+    case 'cursiveLine':
+      // Cursive writing lines with dashed guidelines
+      const cursiveLineHeight = size / 4;
+      // Solid baseline and top line
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(x, y + cursiveLineHeight * 2); // baseline
+      ctx.lineTo(x + size, y + cursiveLineHeight * 2);
+      ctx.stroke();
+      
+      // Dashed guidelines
+      ctx.setLineDash([2 * scale, 2 * scale]);
+      ctx.beginPath();
+      ctx.moveTo(x, y + cursiveLineHeight); // top guideline
+      ctx.lineTo(x + size, y + cursiveLineHeight);
+      ctx.moveTo(x, y + cursiveLineHeight * 3); // bottom guideline
+      ctx.lineTo(x + size, y + cursiveLineHeight * 3);
+      ctx.stroke();
+      break;
+      
     default: // blank
       break;
   }
@@ -255,6 +290,12 @@ function renderCharacterGrid(
     if (gridType === 'fourLine') {
       // Center vertically within the four-line grid
       ctx.fillText(charData.character, x + size/2, y + size/2);
+    } else if (gridType === 'englishLine') {
+      // Position text on the middle line for English writing
+      ctx.fillText(charData.character, x + size/2, y + (size * 2/3));
+    } else if (gridType === 'cursiveLine') {
+      // Position text on the baseline for cursive writing
+      ctx.fillText(charData.character, x + size/2, y + (size/2));
     } else {
       ctx.fillText(charData.character, x + size/2, y + size/2);
     }

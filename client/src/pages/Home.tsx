@@ -7,7 +7,7 @@ import LayoutSettings from "@/components/LayoutSettings";
 import StyleSettings from "@/components/StyleSettings";
 import PreviewCanvas from "@/components/PreviewCanvas";
 import HelpDialog from "@/components/HelpDialog";
-import { defaultSettings, type CharacterGridSettings, formatDateForFilename } from "@/lib/utils";
+import { defaultSettings, getDefaultSettingsForTemplate, type CharacterGridSettings, formatDateForFilename } from "@/lib/utils";
 import { exportToPDF } from "@/lib/pdfExporter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,11 +22,17 @@ export default function Home() {
     setSettings(prev => ({ ...prev, ...updates }));
   };
 
+  const handleTemplateTypeChange = (templateType: CharacterGridSettings['templateType']) => {
+    const templateDefaults = getDefaultSettingsForTemplate(templateType);
+    setSettings(prev => ({ ...prev, templateType, ...templateDefaults }));
+  };
+
   const handleExportPDF = async () => {
-    if (!settings.content.trim() && settings.templateType === 'single') {
+    const needsContent = ['single', 'englishPrint', 'englishCursive', 'englishWords'].includes(settings.templateType);
+    if (!settings.content.trim() && needsContent) {
       toast({
-        title: "内容为空",
-        description: "请先输入要练习的文字内容",
+        title: "内容为空 / Content Empty",
+        description: "请先输入要练习的文字内容 / Please enter content to practice",
         variant: "destructive",
       });
       return;
@@ -54,10 +60,11 @@ export default function Home() {
   };
 
   const handlePreview = () => {
-    if (!settings.content.trim() && settings.templateType === 'single') {
+    const needsContent = ['single', 'englishPrint', 'englishCursive', 'englishWords'].includes(settings.templateType);
+    if (!settings.content.trim() && needsContent) {
       toast({
-        title: "内容为空",
-        description: "请先输入要练习的文字内容",
+        title: "内容为空 / Content Empty",
+        description: "请先输入要练习的文字内容 / Please enter content to practice",
         variant: "destructive",
       });
       return;
@@ -150,7 +157,7 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               <Button 
                 onClick={handleExportPDF}
-                disabled={isExporting || (!settings.content.trim() && settings.templateType === 'single')}
+                disabled={isExporting || (!settings.content.trim() && ['single', 'englishPrint', 'englishCursive', 'englishWords'].includes(settings.templateType))}
                 className="bg-primary-500 hover:bg-primary-600 text-white"
               >
                 {isExporting ? (
@@ -176,7 +183,7 @@ export default function Home() {
 
               <TemplateSelector 
                 value={settings.templateType}
-                onChange={(templateType) => updateSettings({ templateType })}
+                onChange={handleTemplateTypeChange}
               />
 
               <GridTypeSelector
@@ -271,7 +278,7 @@ export default function Home() {
                   </div>
                   <Button 
                     onClick={handleExportPDF}
-                    disabled={isExporting || (!settings.content.trim() && settings.templateType === 'single')}
+                    disabled={isExporting || (!settings.content.trim() && ['single', 'englishPrint', 'englishCursive', 'englishWords'].includes(settings.templateType))}
                     className="bg-primary-500 hover:bg-primary-600 text-white font-medium"
                   >
                     {isExporting ? (

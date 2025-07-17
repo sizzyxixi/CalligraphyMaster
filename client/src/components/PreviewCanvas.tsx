@@ -58,13 +58,14 @@ export default function PreviewCanvas({ settings, zoomLevel = 75 }: PreviewCanva
   const displayWidth = baseWidth * scale;
   const displayHeight = baseHeight * scale;
 
-  if (!settings.content.trim() && settings.templateType === 'single') {
+  const needsContent = ['single', 'englishPrint', 'englishCursive', 'englishWords'].includes(settings.templateType);
+  if (!settings.content.trim() && needsContent) {
     return (
       <div className="bg-white shadow-lg flex items-center justify-center" style={{ width: `${displayWidth}px`, height: `${displayHeight}px` }}>
         <div className="text-center text-gray-500">
           <i className="fas fa-file-alt text-4xl mb-4"></i>
-          <p className="text-lg font-medium">请输入文字内容</p>
-          <p className="text-sm">在左侧面板输入要练习的内容</p>
+          <p className="text-lg font-medium">请输入文字内容 / Enter Content</p>
+          <p className="text-sm">在左侧面板输入要练习的内容 / Enter content to practice in the left panel</p>
         </div>
       </div>
     );

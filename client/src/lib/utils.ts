@@ -5,9 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export type GridType = 'mi' | 'tian' | 'blank' | 'fourLine';
-export type TemplateType = 'article' | 'single';
-export type FontType = 'kaiti' | 'simsun' | 'simhei' | 'fangsong' | 'arial' | 'times' | 'courier';
+export type GridType = 'mi' | 'tian' | 'blank' | 'fourLine' | 'englishLine' | 'cursiveLine';
+export type TemplateType = 'article' | 'single' | 'englishPrint' | 'englishCursive' | 'englishWords';
+export type FontType = 'kaiti' | 'simsun' | 'simhei' | 'fangsong' | 'arial' | 'times' | 'courier' | 'cursive' | 'print';
 
 export interface CharacterGridSettings {
   templateType: TemplateType;
@@ -31,6 +31,48 @@ export const defaultSettings: CharacterGridSettings = {
   showPinyin: false,
 };
 
+// Get appropriate default settings based on template type
+export function getDefaultSettingsForTemplate(templateType: TemplateType): Partial<CharacterGridSettings> {
+  switch (templateType) {
+    case 'englishPrint':
+      return {
+        gridType: 'englishLine',
+        fontType: 'arial',
+        gridsPerRow: 8,
+        showPinyin: false
+      };
+    case 'englishCursive':
+      return {
+        gridType: 'cursiveLine',
+        fontType: 'cursive',
+        gridsPerRow: 6,
+        showPinyin: false
+      };
+    case 'englishWords':
+      return {
+        gridType: 'blank',
+        fontType: 'arial',
+        gridsPerRow: 4,
+        showPinyin: false
+      };
+    case 'single':
+      return {
+        gridType: 'mi',
+        fontType: 'kaiti',
+        gridsPerRow: 10,
+        showPinyin: false
+      };
+    case 'article':
+    default:
+      return {
+        gridType: 'mi',
+        fontType: 'kaiti',
+        gridsPerRow: 10,
+        showPinyin: false
+      };
+  }
+}
+
 export function getChineseCharacters(text: string): string[] {
   // Split text into individual characters, filtering out whitespace and punctuation
   return text.split('').filter(char => {
@@ -50,6 +92,18 @@ export function getAllCharacters(text: string): string[] {
     // Only filter out whitespace characters like spaces, tabs, newlines
     return char.trim() !== '';
   });
+}
+
+// Get English words from text
+export function getEnglishWords(text: string): string[] {
+  // Split by whitespace and filter out empty strings
+  return text.split(/\s+/).filter(word => word.trim() !== '');
+}
+
+// Get English letters from text
+export function getEnglishLetters(text: string): string[] {
+  // Split into individual characters, keeping only letters
+  return text.split('').filter(char => /[a-zA-Z]/.test(char));
 }
 
 // Detect content type automatically
@@ -162,7 +216,10 @@ export function getFontFamily(fontType: FontType): string {
     // English fonts with Chinese fallback for mixed content
     arial: 'Arial, "Helvetica Neue", Helvetica, "Noto Sans CJK SC", sans-serif',
     times: '"Times New Roman", Times, "Noto Sans CJK SC", serif',
-    courier: '"Courier New", Courier, "Noto Sans CJK SC", monospace'
+    courier: '"Courier New", Courier, "Noto Sans CJK SC", monospace',
+    // English calligraphy fonts
+    cursive: '"Brush Script MT", "Lucida Handwriting", "Segoe Script", cursive, "Noto Sans CJK SC", sans-serif',
+    print: '"Comic Sans MS", "Marker Felt", "Bradley Hand", "Trebuchet MS", sans-serif, "Noto Sans CJK SC"'
   };
   return fontMap[fontType];
 }
