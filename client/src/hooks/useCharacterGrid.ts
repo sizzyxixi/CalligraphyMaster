@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { getChineseCharacters, getAllCharacters, detectContentType, getPinyin, calculateMaxGridsForPage } from "@/lib/utils";
+import { getChineseCharacters, getAllCharacters, getEnglishWords, getEnglishLetters, detectContentType, getPinyin, calculateMaxGridsForPage } from "@/lib/utils";
 import type { CharacterGridSettings } from "@/lib/utils";
 
 export function useCharacterGrid(settings: CharacterGridSettings) {
@@ -106,6 +106,69 @@ export function useCharacterGrid(settings: CharacterGridSettings) {
       }
       
       // If we have less than one page of content, fill remaining space with empty grids
+      if (result.length < maxGridsPerPage) {
+        while (result.length < maxGridsPerPage) {
+          result.push({
+            character: '',
+            pinyin: undefined
+          });
+        }
+      }
+      
+      return result;
+    } else if (settings.templateType === 'englishPrint' || settings.templateType === 'englishCursive') {
+      // English letter practice: Each letter fills entire rows
+      if (!settings.content.trim()) {
+        return Array(maxGridsPerPage).fill(null).map(() => ({
+          character: '',
+          pinyin: undefined
+        }));
+      }
+      
+      const letters = getEnglishLetters(settings.content);
+      const result = [];
+      
+      for (const letter of letters) {
+        // Fill entire row with the same letter
+        for (let i = 0; i < settings.gridsPerRow; i++) {
+          result.push({
+            character: letter,
+            pinyin: undefined
+          });
+        }
+      }
+      
+      // Fill remaining space with empty grids if needed
+      if (result.length < maxGridsPerPage) {
+        while (result.length < maxGridsPerPage) {
+          result.push({
+            character: '',
+            pinyin: undefined
+          });
+        }
+      }
+      
+      return result;
+    } else if (settings.templateType === 'englishWords') {
+      // English word practice: Each word in separate grids
+      if (!settings.content.trim()) {
+        return Array(maxGridsPerPage).fill(null).map(() => ({
+          character: '',
+          pinyin: undefined
+        }));
+      }
+      
+      const words = getEnglishWords(settings.content);
+      const result = [];
+      
+      for (const word of words) {
+        result.push({
+          character: word,
+          pinyin: undefined
+        });
+      }
+      
+      // Fill remaining space with empty grids if needed
       if (result.length < maxGridsPerPage) {
         while (result.length < maxGridsPerPage) {
           result.push({
