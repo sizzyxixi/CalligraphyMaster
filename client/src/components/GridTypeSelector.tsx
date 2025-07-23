@@ -49,10 +49,11 @@ export default function GridTypeSelector({ value, onChange }: GridTypeSelectorPr
       id: 'fourLine' as const,
       label: '四线格',
       preview: (
-        <div className="ml-2 w-6 h-4 border-l border-r border-gray-400 relative">
-          <div className="absolute w-full border-t border-gray-400" style={{ top: '25%' }}></div>
-          <div className="absolute w-full border-t border-gray-400" style={{ top: '50%' }}></div>
-          <div className="absolute w-full border-t border-gray-400" style={{ top: '75%' }}></div>
+        <div className="ml-2 w-8 h-4 border-l border-r border-t border-b border-gray-400 relative">
+          <div className="absolute w-full border-t border-gray-400" style={{ top: '33.33%' }}></div>
+          <div className="absolute w-full border-t border-gray-400" style={{ top: '66.66%' }}></div>
+          <div className="absolute border-l border-gray-300 h-full" style={{ left: '33.33%' }}></div>
+          <div className="absolute border-l border-gray-300 h-full" style={{ left: '66.66%' }}></div>
         </div>
       )
     }
