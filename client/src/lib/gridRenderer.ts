@@ -51,44 +51,202 @@ export function renderGrid(
   const startX = (canvasWidth - totalRowWidth) / 2;
   const startY = headerHeight + (10 * scale); // Reduced from 20 to 10px
   
-  // Render character grids
+  // Handle different grid types
+  if (settings.gridType === 'fourLine') {
+    // Render four-line rows
+    renderFourLineRows(ctx, settings, characterData, gridLayout, scale, startX, startY, availableWidth, availableHeight, padding);
+  } else {
+    // Render character grids
+    let charIndex = 0;
+    // Calculate max rows ensuring no partial rows at bottom
+    const maxRows = Math.floor((availableHeight - 20 * scale) / totalRowHeight); // Reduced from 40 to 20px
+    
+    for (let row = 0; row < Math.min(gridLayout.rows, maxRows); row++) {
+      const rowY = startY + (row * totalRowHeight);
+      
+      // Check if the entire row (including pinyin) can fit
+      if (rowY + totalRowHeight > canvasHeight - padding) {
+        break; // Don't render partial rows
+      }
+      
+      // Render pinyin row if needed
+      if (needsPinyinRows) {
+        for (let col = 0; col < gridsPerRow; col++) {
+          const x = startX + (col * (gridSize + Math.abs(gridSpacing)));
+          const charData = characterData[charIndex + col];
+          
+          if (charData) {
+            renderPinyinGrid(ctx, x, rowY, gridSize, pinyinRowHeight, charData, scale);
+          }
+        }
+      }
+      
+      // Render main character grids
+      for (let col = 0; col < gridsPerRow; col++) {
+        const x = startX + (col * (gridSize + Math.abs(gridSpacing)));
+        const y = rowY + pinyinRowHeight;
+        
+        const charData = characterData[charIndex];
+        renderCharacterGrid(ctx, settings, x, y, gridSize, charData, scale);
+        
+        charIndex++;
+        if (charIndex >= characterData.length) break;
+      }
+      if (charIndex >= characterData.length) break;
+    }
+  }
+}
+
+function renderFourLineRows(
+  ctx: CanvasRenderingContext2D,
+  settings: CharacterGridSettings,
+  characterData: CharacterData[],
+  gridLayout: GridLayout,
+  scale: number,
+  startX: number,
+  startY: number,
+  availableWidth: number,
+  availableHeight: number,
+  padding: number
+) {
+  const { gridsPerRow } = gridLayout;
+  const rowHeight = 48 * scale; // Four-line grid height
+  const rowSpacing = 15 * scale; // Space between rows - increased for better readability
+  const totalRowHeight = rowHeight + rowSpacing;
+  
+  // Calculate how many rows can fit
+  const maxRows = Math.floor((availableHeight - 20 * scale) / totalRowHeight);
+  
   let charIndex = 0;
-  // Calculate max rows ensuring no partial rows at bottom
-  const maxRows = Math.floor((availableHeight - 20 * scale) / totalRowHeight); // Reduced from 40 to 20px
   
   for (let row = 0; row < Math.min(gridLayout.rows, maxRows); row++) {
     const rowY = startY + (row * totalRowHeight);
     
-    // Check if the entire row (including pinyin) can fit
-    if (rowY + totalRowHeight > canvasHeight - padding) {
-      break; // Don't render partial rows
+    // Check if the entire row can fit
+    if (rowY + rowHeight > availableHeight - padding + startY) {
+      break;
     }
     
-    // Render pinyin row if needed
-    if (needsPinyinRows) {
-      for (let col = 0; col < gridsPerRow; col++) {
-        const x = startX + (col * (gridSize + Math.abs(gridSpacing)));
-        const charData = characterData[charIndex + col];
-        
-        if (charData) {
-          renderPinyinGrid(ctx, x, rowY, gridSize, pinyinRowHeight, charData, scale);
-        }
-      }
-    }
+    // Get characters for this row
+    const rowCharacters = characterData.slice(charIndex, charIndex + gridsPerRow);
     
-    // Render main character grids
-    for (let col = 0; col < gridsPerRow; col++) {
-      const x = startX + (col * (gridSize + Math.abs(gridSpacing)));
-      const y = rowY + pinyinRowHeight;
-      
-      const charData = characterData[charIndex];
-      renderCharacterGrid(ctx, settings, x, y, gridSize, charData, scale);
-      
-      charIndex++;
-      if (charIndex >= characterData.length) break;
-    }
+    // Calculate grid size and center the four-line row
+    const gridSize = calculateGridSize(gridsPerRow, availableWidth / scale) * scale;
+    const totalRowWidth = gridsPerRow * gridSize;
+    const centeredX = (ctx.canvas.width - totalRowWidth) / 2;
+    
+    // Render the four-line row
+    renderSingleFourLineRow(ctx, settings, rowCharacters, centeredX, rowY, totalRowWidth, rowHeight, scale);
+    
+    charIndex += gridsPerRow;
     if (charIndex >= characterData.length) break;
   }
+}
+
+function renderSingleFourLineRow(
+  ctx: CanvasRenderingContext2D,
+  settings: CharacterGridSettings,
+  rowCharacters: CharacterData[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  scale: number
+) {
+  const { gridsPerRow, fontType, fontOpacity } = settings;
+  
+  // Draw complete four-line grid structure (4 lines total)
+  ctx.strokeStyle = '#6B7280';
+  ctx.lineWidth = 1 * scale;
+  ctx.setLineDash([]);
+  
+  const lineHeight = height / 3; // 3 sections between 4 lines
+  
+  // Draw 4 horizontal lines: top border + 2 middle lines + bottom border
+  for (let i = 0; i <= 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + (i * lineHeight));
+    ctx.lineTo(x + width, y + (i * lineHeight));
+    ctx.stroke();
+  }
+  
+  // Draw left and right borders
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x, y + height);
+  ctx.moveTo(x + width, y);
+  ctx.lineTo(x + width, y + height);
+  ctx.stroke();
+  
+  // Draw vertical dividing lines
+  ctx.strokeStyle = '#D1D5DB';
+  ctx.lineWidth = 1 * scale;
+  const cellWidth = width / gridsPerRow;
+  for (let i = 1; i < gridsPerRow; i++) {
+    ctx.beginPath();
+    ctx.moveTo(x + (i * cellWidth), y);
+    ctx.lineTo(x + (i * cellWidth), y + height);
+    ctx.stroke();
+  }
+  
+  // Draw characters
+  ctx.setLineDash([]);
+  // Use a slightly smaller font size for better fit in four-line grid
+  const fontSize = calculateFontSize(height / scale * 0.8, settings.fontSize) * scale;
+  const fontFamily = getFontFamily(fontType);
+  const chineseFontFamily = `${fontFamily}, "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", "SimHei", "Arial Unicode MS", sans-serif`;
+  
+  ctx.fillStyle = `rgba(107, 114, 128, ${fontOpacity / 100})`;
+  ctx.font = `${fontSize}px ${chineseFontFamily}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  for (let i = 0; i < gridsPerRow && i < rowCharacters.length; i++) {
+    const charData = rowCharacters[i];
+    if (charData?.character) {
+      const charX = x + (i * cellWidth) + (cellWidth / 2);
+      const charY = calculateCharacterPositionInFourLineGrid(charData.character, y, height);
+      ctx.fillText(charData.character, charX, charY);
+    }
+  }
+}
+
+function calculateCharacterPositionInFourLineGrid(character: string, y: number, height: number): number {
+  const sectionHeight = height / 3;
+  
+  // Uppercase letters: occupy top and middle sections
+  if (character >= 'A' && character <= 'Z') {
+    // Position slightly above center of top and middle sections
+    return y + sectionHeight * 0.9;
+  }
+  
+  // Lowercase letters with ascenders (b, d, h, i, k, l, t): occupy top and middle sections
+  if ('bdhiklt'.includes(character)) {
+    // Position slightly above center of top and middle sections
+    return y + sectionHeight * 0.9;
+  }
+  
+  // Lowercase letters with full height (f, j): occupy all three sections
+  if ('fj'.includes(character)) {
+    // Position in the center of all three sections
+    return y + (height / 2);
+  }
+  
+  // Lowercase letters with descenders (p, q, y): occupy middle and bottom sections
+  if ('pqy'.includes(character)) {
+    // Position in the center of middle section, allowing descender to go down
+    return y + sectionHeight + (sectionHeight / 2);
+  }
+  
+  // Letters with slight descenders (g): occupy middle and bottom sections
+  if ('g'.includes(character)) {
+    // Position in the center of middle section, allowing descender to go down
+    return y + sectionHeight + (sectionHeight / 2);
+  }
+  
+  // Other lowercase letters (a, c, e, m, n, o, r, s, u, v, w, x, z): occupy middle section only
+  // Position in the center of middle section
+  return y + sectionHeight + (sectionHeight / 2);
 }
 
 function renderPinyinGrid(
@@ -137,7 +295,7 @@ function renderHeader(ctx: CanvasRenderingContext2D, scale: number, canvasWidth:
   ctx.fillStyle = '#1F2937';
   ctx.font = `bold ${20 * scale}px "Inter", "Noto Sans SC", sans-serif`; // Reduced from 24 to 20px
   ctx.textAlign = 'center';
-  ctx.fillText('汉字练习字帖', canvasWidth / 2, 25 * scale); // Reduced from 30 to 25px
+  ctx.fillText('拼音练习', canvasWidth / 2, 25 * scale); // Reduced from 30 to 25px
   
   // 姓名和日期信息行 - 两端对齐分布，紧贴首行格子上方
   ctx.fillStyle = '#6B7280';
@@ -173,9 +331,9 @@ function renderCharacterGrid(
   ctx.setLineDash([]); // Solid line for outer border
   
   if (gridType === 'fourLine') {
-    const lineHeight = size / 4;
-    // Draw four horizontal lines
-    for (let i = 0; i <= 4; i++) {
+    const lineHeight = size / 3; // 3 sections between 4 lines
+    // Draw 4 horizontal lines: top border + 2 middle lines + bottom border
+    for (let i = 0; i <= 3; i++) {
       ctx.beginPath();
       ctx.moveTo(x, y + (i * lineHeight));
       ctx.lineTo(x + size, y + (i * lineHeight));
@@ -253,8 +411,9 @@ function renderCharacterGrid(
     ctx.textBaseline = 'middle';
     
     if (gridType === 'fourLine') {
-      // Center vertically within the four-line grid
-      ctx.fillText(charData.character, x + size/2, y + size/2);
+      // Use the same positioning logic for individual four-line grids
+      const charY = calculateCharacterPositionInFourLineGrid(charData.character, y, size);
+      ctx.fillText(charData.character, x + size/2, charY);
     } else {
       ctx.fillText(charData.character, x + size/2, y + size/2);
     }

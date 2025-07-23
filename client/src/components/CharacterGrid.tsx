@@ -50,9 +50,8 @@ export default function CharacterGrid({
       case 'fourLine':
         return (
           <div className="absolute inset-0">
-            <div className="absolute w-full border-t border-gray-400" style={{ top: '25%' }}></div>
-            <div className="absolute w-full border-t border-gray-400" style={{ top: '50%' }}></div>
-            <div className="absolute w-full border-t border-gray-400" style={{ top: '75%' }}></div>
+            <div className="absolute w-full border-t border-gray-400" style={{ top: '33.33%' }}></div>
+            <div className="absolute w-full border-t border-gray-400" style={{ top: '66.66%' }}></div>
           </div>
         );
       default:
@@ -64,7 +63,7 @@ export default function CharacterGrid({
     <div
       className={cn(
         "relative bg-white border-2 border-gray-400 flex flex-col items-center justify-center",
-        gridType === 'fourLine' ? 'h-12' : ''
+gridType === 'fourLine' ? 'h-12' : ''
       )}
       style={{ 
         width: `${size}px`, 
