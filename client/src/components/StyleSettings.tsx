@@ -24,6 +24,7 @@ export default function StyleSettings({
   onShowPinyinChange
 }: StyleSettingsProps) {
   const isFourLineGrid = gridType === 'fourLine';
+  const isMiGrid = gridType === 'mi';
   
   return (
     <div className="p-6">
@@ -56,7 +57,14 @@ export default function StyleSettings({
           </Select>
         </div>
         <div>
-          <Label className="block text-sm font-medium text-gray-700 mb-2">字体颜色透明度</Label>
+          <Label className="block text-sm font-medium text-gray-700 mb-2">
+            字体颜色透明度
+            {isMiGrid && (
+              <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                米字格练习模式：轮廓+淡化填充
+              </span>
+            )}
+          </Label>
           <Slider
             value={[fontOpacity]}
             onValueChange={(values) => onFontOpacityChange(values[0])}
@@ -70,6 +78,12 @@ export default function StyleSettings({
             <span>适中</span>
             <span>深色</span>
           </div>
+          {isMiGrid && (
+            <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+              <i className="fas fa-info-circle mr-1"></i>
+              米字格专为文字练习设计，显示轮廓字供描摹，透明度影响参考字淡化程度
+            </div>
+          )}
         </div>
         {!isFourLineGrid && (
           <div className="flex items-center justify-between">
