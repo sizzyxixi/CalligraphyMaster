@@ -9,7 +9,14 @@ import PreviewCanvas from "@/components/PreviewCanvas";
 import HelpDialog from "@/components/HelpDialog";
 import { defaultSettings, type CharacterGridSettings, formatDateForFilename } from "@/lib/utils";
 import { exportToPDF } from "@/lib/pdfExporter";
+import { exportToImage, type ImageFormat } from "@/lib/imageExporter";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Home() {
   const [settings, setSettings] = useState<CharacterGridSettings>(defaultSettings);
@@ -34,7 +41,7 @@ export default function Home() {
 
     setIsExporting(true);
     try {
-      const filename = `字帖_${formatDateForFilename()}.pdf`;
+      const filename = `字帖_${formatDateForFilename()}`;
       await exportToPDF(settings, filename);
       
       toast({
@@ -46,6 +53,28 @@ export default function Home() {
       toast({
         title: "导出失败",
         description: "PDF 生成时发生错误，请重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportImage = async (format: ImageFormat) => {
+    setIsExporting(true);
+    try {
+      const filename = `字帖_${formatDateForFilename()}`;
+      await exportToImage(settings, filename, { format, quality: 0.95 });
+      
+      toast({
+        title: "导出成功",
+        description: `${format.toUpperCase()} 图片已生成并开始下载`,
+      });
+    } catch (error) {
+      console.error('Image export failed:', error);
+      toast({
+        title: "导出失败",
+        description: "图片生成时发生错误，请重试",
         variant: "destructive",
       });
     } finally {
@@ -148,17 +177,34 @@ export default function Home() {
               </nav>
             </div>
             <div className="flex items-center space-x-4">
-              <Button 
-                onClick={handleExportPDF}
-                disabled={isExporting || (!settings.content.trim() && settings.templateType === 'single')}
-                className="bg-primary-500 hover:bg-primary-600 text-white"
-              >
-                {isExporting ? (
-                  <><i className="fas fa-spinner fa-spin mr-2"></i>生成中...</>
-                ) : (
-                  <><i className="fas fa-download mr-2"></i>导出PDF</>
-                )}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    disabled={isExporting}
+                    className="bg-primary-500 hover:bg-primary-600 text-white"
+                  >
+                    {isExporting ? (
+                      <><i className="fas fa-spinner fa-spin mr-2"></i>生成中...</>
+                    ) : (
+                      <><i className="fas fa-download mr-2"></i>导出 <i className="fas fa-chevron-down ml-2"></i></>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportPDF}>
+                    <i className="fas fa-file-pdf mr-2"></i>
+                    导出为 PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExportImage('png')}>
+                    <i className="fas fa-image mr-2"></i>
+                    导出为 PNG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExportImage('jpg')}>
+                    <i className="fas fa-image mr-2"></i>
+                    导出为 JPG
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -269,17 +315,34 @@ export default function Home() {
                       {settings.templateType === 'article' ? '格子数:' : '字数:'}
                     </span> {getCharacterCount()} {settings.templateType === 'article' ? '个' : '字'}
                   </div>
-                  <Button 
-                    onClick={handleExportPDF}
-                    disabled={isExporting || (!settings.content.trim() && settings.templateType === 'single')}
-                    className="bg-primary-500 hover:bg-primary-600 text-white font-medium"
-                  >
-                    {isExporting ? (
-                      <><i className="fas fa-spinner fa-spin mr-2"></i>生成中...</>
-                    ) : (
-                      <><i className="fas fa-download mr-2"></i>导出PDF</>
-                    )}
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        disabled={isExporting}
+                        className="bg-primary-500 hover:bg-primary-600 text-white font-medium"
+                      >
+                        {isExporting ? (
+                          <><i className="fas fa-spinner fa-spin mr-2"></i>生成中...</>
+                        ) : (
+                          <><i className="fas fa-download mr-2"></i>导出 <i className="fas fa-chevron-down ml-2"></i></>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleExportPDF}>
+                        <i className="fas fa-file-pdf mr-2"></i>
+                        导出为 PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportImage('png')}>
+                        <i className="fas fa-image mr-2"></i>
+                        导出为 PNG
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportImage('jpg')}>
+                        <i className="fas fa-image mr-2"></i>
+                        导出为 JPG
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>

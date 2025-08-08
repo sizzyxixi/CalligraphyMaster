@@ -323,7 +323,7 @@ function renderCharacterGrid(
   charData?: CharacterData,
   scale: number = 1
 ) {
-  const { gridType, fontType, fontOpacity, showPinyin } = settings;
+  const { gridType, fontType, fontOpacity } = settings;
   
   // Draw outer border (thinner)
   ctx.strokeStyle = '#6B7280';
@@ -403,19 +403,33 @@ function renderCharacterGrid(
     // Ensure Chinese font rendering
     const chineseFontFamily = `${fontFamily}, "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", "SimHei", "Arial Unicode MS", sans-serif`;
     
-    // Draw main character
-    const alpha = fontOpacity / 100;
-    ctx.fillStyle = `rgba(107, 114, 128, ${alpha})`;
     ctx.font = `${fontSize}px ${chineseFontFamily}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    if (gridType === 'fourLine') {
-      // Use the same positioning logic for individual four-line grids
-      const charY = calculateCharacterPositionInFourLineGrid(charData.character, y, size);
-      ctx.fillText(charData.character, x + size/2, charY);
+    const charX = x + size/2;
+    const charY = gridType === 'fourLine' 
+      ? calculateCharacterPositionInFourLineGrid(charData.character, y, size)
+      : y + size/2;
+    
+    if (gridType === 'mi') {
+      // 米字格专用练习效果：轮廓字 + 淡化填充
+      
+      // 1. 绘制轮廓字（描边效果）- 使用更清晰的轮廓
+      ctx.strokeStyle = `rgba(75, 85, 99, 0.8)`; // 更深的颜色使轮廓更清晰
+      ctx.lineWidth = 2 * scale; // 较粗的轮廓线条
+      ctx.strokeText(charData.character, charX, charY);
+      
+      // 2. 绘制非常淡的填充字（供描摹参考）
+      const alpha = Math.min(fontOpacity / 100 * 0.25, 0.12); // 进一步降低透明度
+      ctx.fillStyle = `rgba(107, 114, 128, ${alpha})`;
+      ctx.fillText(charData.character, charX, charY);
+      
     } else {
-      ctx.fillText(charData.character, x + size/2, y + size/2);
+      // 其他格子类型使用正常的淡化效果
+      const alpha = fontOpacity / 100;
+      ctx.fillStyle = `rgba(107, 114, 128, ${alpha})`;
+      ctx.fillText(charData.character, charX, charY);
     }
   }
 }
